@@ -1,5 +1,5 @@
 import statistics
-from typing import List
+from typing import List, Optional
 
 from app.repositories.measurements_repository import measurements_repository
 from app.schemas.statistics import (
@@ -14,7 +14,7 @@ class StatisticsService:
     Servicio encargado de aplicar análisis estadístico sobre las mediciones.
     """
 
-    def get_statistics(self, session_id: str) -> StatisticsResponse | None:
+    def get_statistics(self, session_id: str) -> Optional[StatisticsResponse]:
         history = measurements_repository.get_history(session_id)
 
         if not history:

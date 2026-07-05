@@ -1,3 +1,4 @@
+from typing import Optional
 from app.repositories.measurements_repository import measurements_repository
 from app.schemas.metrics import (
     LiveMetricsResponse,
@@ -7,12 +8,8 @@ from app.schemas.metrics import (
 
 
 class MetricsService:
-    """
-    Servicio encargado de entregar métricas actuales e históricas
-    a partir de las mediciones almacenadas.
-    """
 
-    def get_live_metrics(self, session_id: str) -> LiveMetricsResponse | None:
+    def get_live_metrics(self, session_id: str) -> Optional[LiveMetricsResponse]:
         latest = measurements_repository.get_latest(session_id)
 
         if latest is None:

@@ -5,4 +5,4 @@ python-dotenv
 pyshark
 sqlalchemy
 pydantic-settings
-python-dotenv
+psycopg2-binary

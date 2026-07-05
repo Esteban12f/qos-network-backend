@@ -1,3 +1,4 @@
+from typing import Optional
 from app.services.statistics_service import statistics_service
 from app.schemas.queue import QueueRealtimeResponse
 
@@ -11,7 +12,7 @@ class QueueService:
     - μ se estima a partir de la latencia promedio.
     """
 
-    def get_realtime_queue_metrics(self, session_id: str) -> QueueRealtimeResponse | None:
+    def get_realtime_queue_metrics(self, session_id: str) -> Optional[QueueRealtimeResponse]:
         stats = statistics_service.get_statistics(session_id)
 
         if stats is None:
