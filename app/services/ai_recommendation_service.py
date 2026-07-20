@@ -24,9 +24,9 @@ class AIRecommendationService:
     sin cambiar el endpoint /recommendations/{session_id}.
     """
 
-    def generate_recommendations(self, session_id: str) -> Optional[RecommendationResponse]:
-        stats = statistics_service.get_statistics(session_id)
-        queue_metrics = queue_service.get_realtime_queue_metrics(session_id)
+    def generate_recommendations(self, user_id: str, session_id: str) -> Optional[RecommendationResponse]:
+        stats = statistics_service.get_statistics(user_id, session_id)
+        queue_metrics = queue_service.get_realtime_queue_metrics(user_id, session_id)
 
         if stats is None or queue_metrics is None:
             return None

@@ -19,7 +19,7 @@ class MeasurementService:
     Este servicio calcula métricas derivadas y guarda la medición.
     """
 
-    def ingest_measurement(self, measurement: MeasurementCreate) -> MeasurementResponse:
+    def ingest_measurement(self, user_id: str, measurement: MeasurementCreate) -> MeasurementResponse:
         if measurement.failed_requests > measurement.total_requests:
             raise ValueError("failed_requests no puede ser mayor que total_requests")
 
@@ -47,6 +47,7 @@ class MeasurementService:
         }
 
         measurements_repository.save(
+            user_id=user_id,
             session_id=measurement.session_id,
             measurement=measurement_data
         )
@@ -64,11 +65,11 @@ class MeasurementService:
             server_timestamp=server_timestamp
         )
 
-    def has_measurements(self, session_id: str) -> bool:
-        return measurements_repository.exists(session_id)
+    def has_measurements(self, user_id: str, session_id: str) -> bool:
+        return measurements_repository.exists(user_id, session_id)
 
-    def clear_session(self, session_id: str) -> bool:
-        return measurements_repository.clear_session(session_id)
+    def clear_session(self, user_id: str, session_id: str) -> bool:
+        return measurements_repository.clear_session(user_id, session_id)
 
 
 measurement_service = MeasurementService()

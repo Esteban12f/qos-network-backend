@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,13 +10,23 @@ from app.api.recommendations import router as recommendations_router
 from app.api.statistics      import router as statistics_router
 from app.api.system          import router as system_router
 from app.core.config         import get_settings
-from app.core.database       import create_tables
+from app.core.database       import create_tables, ensure_user_id_column
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    create_tables()
+    try:
+        create_tables()
+        ensure_user_id_column()
+    except Exception:
+        logger.warning(
+            "No se pudo conectar a la base de datos al iniciar. "
+            "El servidor seguirá activo, pero las operaciones que usen la base de datos fallarán "
+            "hasta que DATABASE_URL sea válida.",
+            exc_info=True,
+        )
     yield
 
 app = FastAPI(title=settings.app_name, version=settings.app_version, lifespan=lifespan)

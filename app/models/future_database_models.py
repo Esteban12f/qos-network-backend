@@ -9,6 +9,7 @@ class MeasurementDB(Base):
     __tablename__ = "measurements"
 
     id                     = Column(Integer,  primary_key=True, autoincrement=True)
+    user_id                = Column(String,   nullable=False, index=True)
     session_id             = Column(String,   nullable=False, index=True)
     latency_ms             = Column(Float,    nullable=False)
     jitter_ms              = Column(Float,    nullable=False)

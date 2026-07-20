@@ -14,8 +14,8 @@ class StatisticsService:
     Servicio encargado de aplicar análisis estadístico sobre las mediciones.
     """
 
-    def get_statistics(self, session_id: str) -> Optional[StatisticsResponse]:
-        history = measurements_repository.get_history(session_id)
+    def get_statistics(self, user_id: str, session_id: str) -> Optional[StatisticsResponse]:
+        history = measurements_repository.get_history(user_id, session_id)
 
         if not history:
             return None

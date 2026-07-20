@@ -6,8 +6,13 @@ class Settings(BaseSettings):
     app_version: str = "1.0.0"
     environment: str = "development"
 
-    frontend_origins: str = "http://localhost:4200,http://127.0.0.1:4200"
+    frontend_origins: str = (
+        "http://localhost:4200,http://127.0.0.1:4200,"
+        "https://qos-network-dashboard.web.app"
+    )
     database_url:     str = "postgresql://user:password@localhost:5432/qos_db"
+
+    firebase_project_id: str = "qos-network-dashboard"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
