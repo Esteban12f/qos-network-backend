@@ -1,100 +1,62 @@
-from collections import defaultdict, deque
-from threading import Lock
-from typing import Dict, List, Optional
-
+from typing import List, Optional
+from app.core.database import SessionLocal
+from app.models.future_database_models import MeasurementDB
 
 class MeasurementsRepository:
-    """
-    Repositorio temporal en memoria.
 
-    Guarda las mediciones por session_id.
-    Más adelante este repositorio podrá reemplazarse por PostgreSQL
-    sin cambiar la lógica de los servicios.
-    """
-
-    def __init__(self, max_points_per_session: int = 300):
-        self.max_points_per_session = max_points_per_session
-        self._storage: Dict[str, deque] = defaultdict(
-            lambda: deque(maxlen=self.max_points_per_session)
-        )
-        self._lock = Lock()
-
-    def save(self, session_id: str, measurement: dict) -> dict:
-        """
-        Guarda una medición asociada a una sesión.
-        """
-        with self._lock:
-            self._storage[session_id].append(measurement)
-
+    def save(self, user_id: str, session_id: str, measurement: dict) -> dict:
+        with SessionLocal() as db:
+            db.add(MeasurementDB(user_id=user_id, **measurement))
+            db.commit()
         return measurement
 
-    def get_latest(self, session_id: str) -> Optional[dict]:
-        """
-        Devuelve la última medición registrada para una sesión.
-        """
-        with self._lock:
-            session_measurements = self._storage.get(session_id)
+    def get_latest(self, user_id: str, session_id: str) -> Optional[dict]:
+        with SessionLocal() as db:
+            row = (db.query(MeasurementDB)
+                   .filter(MeasurementDB.user_id == user_id, MeasurementDB.session_id == session_id)
+                   .order_by(MeasurementDB.id.desc()).first())
+            return self._to_dict(row) if row else None
 
-            if not session_measurements:
-                return None
+    def get_history(self, user_id: str, session_id: str) -> List[dict]:
+        with SessionLocal() as db:
+            rows = (db.query(MeasurementDB)
+                    .filter(MeasurementDB.user_id == user_id, MeasurementDB.session_id == session_id)
+                    .order_by(MeasurementDB.id.asc()).all())
+            return [self._to_dict(r) for r in rows]
 
-            return session_measurements[-1]
+    def count(self, user_id: str, session_id: str) -> int:
+        with SessionLocal() as db:
+            return (db.query(MeasurementDB)
+                    .filter(MeasurementDB.user_id == user_id, MeasurementDB.session_id == session_id)
+                    .count())
 
-    def get_history(self, session_id: str) -> List[dict]:
-        """
-        Devuelve todo el historial almacenado para una sesión.
-        """
-        with self._lock:
-            session_measurements = self._storage.get(session_id)
+    def exists(self, user_id: str, session_id: str) -> bool:
+        with SessionLocal() as db:
+            return (db.query(MeasurementDB.id)
+                    .filter(MeasurementDB.user_id == user_id, MeasurementDB.session_id == session_id)
+                    .first() is not None)
 
-            if not session_measurements:
-                return []
+    def clear_session(self, user_id: str, session_id: str) -> bool:
+        with SessionLocal() as db:
+            deleted = (db.query(MeasurementDB)
+                       .filter(MeasurementDB.user_id == user_id, MeasurementDB.session_id == session_id)
+                       .delete())
+            db.commit()
+            return deleted > 0
 
-            return list(session_measurements)
+    def clear_all(self, user_id: str) -> None:
+        with SessionLocal() as db:
+            db.query(MeasurementDB).filter(MeasurementDB.user_id == user_id).delete()
+            db.commit()
 
-    def count(self, session_id: str) -> int:
-        """
-        Devuelve la cantidad de mediciones registradas para una sesión.
-        """
-        with self._lock:
-            session_measurements = self._storage.get(session_id)
+    def get_all_session_ids(self, user_id: str) -> List[str]:
+        with SessionLocal() as db:
+            return [r[0] for r in (db.query(MeasurementDB.session_id)
+                                   .filter(MeasurementDB.user_id == user_id)
+                                   .distinct().all())]
 
-            if not session_measurements:
-                return 0
-
-            return len(session_measurements)
-
-    def exists(self, session_id: str) -> bool:
-        """
-        Verifica si una sesión tiene mediciones.
-        """
-        with self._lock:
-            return session_id in self._storage and len(self._storage[session_id]) > 0
-
-    def clear_session(self, session_id: str) -> bool:
-        """
-        Elimina las mediciones de una sesión específica.
-        """
-        with self._lock:
-            if session_id in self._storage:
-                del self._storage[session_id]
-                return True
-
-            return False
-
-    def clear_all(self) -> None:
-        """
-        Limpia todas las mediciones almacenadas.
-        """
-        with self._lock:
-            self._storage.clear()
-
-    def get_all_session_ids(self) -> List[str]:
-        """
-        Devuelve todos los session_id registrados.
-        """
-        with self._lock:
-            return list(self._storage.keys())
-
+    @staticmethod
+    def _to_dict(row: MeasurementDB) -> dict:
+        return {c.name: getattr(row, c.name) for c in row.__table__.columns}
 
 measurements_repository = MeasurementsRepository()
